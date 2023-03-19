@@ -28,6 +28,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.NotFoundException;
+import org.apache.iceberg.metrics.MetricsReporter;
 
 /** A Catalog API for table create, drop, and load operations. */
 public interface Catalog {
@@ -72,6 +73,7 @@ public interface Catalog {
         .withPartitionSpec(spec)
         .withLocation(location)
         .withProperties(properties)
+        .withMetricsReporter(metricsReporter())
         .create();
   }
 
@@ -372,6 +374,13 @@ public interface Catalog {
   default void initialize(String name, Map<String, String> properties) {}
 
   /**
+   * Return the metrics reporter for this catalog.
+   *
+   * @return the metrics reporter for this catalog.
+   */
+  MetricsReporter metricsReporter();
+
+  /**
    * A builder used to create valid {@link Table tables} or start create/replace {@link Transaction
    * transactions}.
    *
@@ -418,6 +427,14 @@ public interface Catalog {
      * @return this for method chaining
      */
     TableBuilder withProperty(String key, String value);
+
+    /**
+     * Adds a metrics reporter to the table.
+     *
+     * @param reporter a metrics reporter
+     * @return this for method chaining
+     */
+    TableBuilder withMetricsReporter(MetricsReporter reporter);
 
     /**
      * Creates the table.

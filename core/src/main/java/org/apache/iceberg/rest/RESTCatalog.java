@@ -37,6 +37,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.hadoop.Configurable;
+import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class RESTCatalog implements Catalog, SupportsNamespaces, Configurable<Object>, Closeable {
@@ -66,6 +67,11 @@ public class RESTCatalog implements Catalog, SupportsNamespaces, Configurable<Ob
   public void initialize(String name, Map<String, String> props) {
     Preconditions.checkArgument(props != null, "Invalid configuration: null");
     sessionCatalog.initialize(name, props);
+  }
+
+  @Override
+  public MetricsReporter metricsReporter() {
+    return sessionCatalog.metricsReporter();
   }
 
   @Override

@@ -28,6 +28,7 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 /** A Catalog API for table and namespace operations that includes session context. */
@@ -138,6 +139,13 @@ public interface SessionCatalog {
    * @return this catalog's config properties
    */
   Map<String, String> properties();
+
+  /**
+   * Return the metrics reporter for this catalog.
+   *
+   * @return the metrics reporter for this catalog.
+   */
+  MetricsReporter metricsReporter();
 
   /**
    * Return all the identifiers under this namespace.

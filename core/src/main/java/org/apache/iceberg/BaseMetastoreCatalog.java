@@ -86,12 +86,12 @@ public abstract class BaseMetastoreCatalog implements Catalog {
     TableMetadata metadata = TableMetadataParser.read(ops.io(), metadataFile);
     ops.commit(null, metadata);
 
-    return new BaseTable(ops, fullTableName(name(), identifier));
+    return new BaseTable(ops, fullTableName(name(), identifier), metricsReporter());
   }
 
   @Override
   public TableBuilder buildTable(TableIdentifier identifier, Schema schema) {
-    return new BaseMetastoreCatalogTableBuilder(identifier, schema);
+    return new BaseMetastoreCatalogTableBuilder(identifier, schema).withMetricsReporter(metricsReporter);
   }
 
   private Table loadMetadataTable(TableIdentifier identifier) {
@@ -142,6 +142,8 @@ public abstract class BaseMetastoreCatalog implements Catalog {
     private SortOrder sortOrder = SortOrder.unsorted();
     private String location = null;
 
+    private MetricsReporter reporter;
+
     public BaseMetastoreCatalogTableBuilder(TableIdentifier identifier, Schema schema) {
       Preconditions.checkArgument(
           isValidIdentifier(identifier), "Invalid table identifier: %s", identifier);
@@ -184,6 +186,12 @@ public abstract class BaseMetastoreCatalog implements Catalog {
     }
 
     @Override
+    public TableBuilder withMetricsReporter(MetricsReporter reporter){
+      this.reporter = reporter;
+      return this;
+    }
+
+    @Override
     public Table create() {
       TableOperations ops = newTableOps(identifier);
       if (ops.current() != null) {
@@ -201,7 +209,7 @@ public abstract class BaseMetastoreCatalog implements Catalog {
         throw new AlreadyExistsException("Table was created concurrently: %s", identifier);
       }
 
-      return new BaseTable(ops, fullTableName(name(), identifier));
+      return new BaseTable(ops, fullTableName(name(), identifier), reporter);
     }
 
     @Override
@@ -305,7 +313,8 @@ public abstract class BaseMetastoreCatalog implements Catalog {
     return sb.toString();
   }
 
-  private MetricsReporter metricsReporter() {
+  @Override
+  public MetricsReporter metricsReporter() {
     if (metricsReporter == null) {
       metricsReporter = CatalogUtil.loadMetricsReporter(properties());
     }

@@ -32,6 +32,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
@@ -194,6 +195,11 @@ public class CachingCatalog implements Catalog {
     return table;
   }
 
+  @Override
+  public MetricsReporter metricsReporter() {
+    return catalog.metricsReporter();
+  }
+
   private Iterable<TableIdentifier> metadataTableIdentifiers(TableIdentifier ident) {
     ImmutableList.Builder<TableIdentifier> builder = ImmutableList.builder();
 
@@ -247,6 +253,12 @@ public class CachingCatalog implements Catalog {
     @Override
     public TableBuilder withProperty(String key, String value) {
       innerBuilder.withProperty(key, value);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withMetricsReporter(MetricsReporter reporter) {
+      innerBuilder.withMetricsReporter(reporter);
       return this;
     }
 

@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.LockManager;
 import org.apache.iceberg.MetadataTableType;
@@ -43,6 +44,7 @@ import org.apache.iceberg.Transactions;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -66,12 +68,15 @@ public class HadoopTables implements Tables, Configurable {
 
   private Configuration conf;
 
+  private MetricsReporter reporter;
+
   public HadoopTables() {
     this(new Configuration());
   }
 
   public HadoopTables(Configuration conf) {
     this.conf = conf;
+    reporter = CatalogUtil.loadMetricsReporter(ImmutableMap.of(CatalogProperties.METRICS_REPORTER_IMPL, conf.get(CatalogProperties.METRICS_REPORTER_IMPL)));
   }
 
   /**
@@ -92,7 +97,7 @@ public class HadoopTables implements Tables, Configurable {
       // Load a normal table
       TableOperations ops = newTableOps(location);
       if (ops.current() != null) {
-        result = new BaseTable(ops, location);
+        result = new BaseTable(ops, location, reporter);
       } else {
         throw new NoSuchTableException("Table does not exist at location: %s", location);
       }
@@ -156,6 +161,7 @@ public class HadoopTables implements Tables, Configurable {
         .withPartitionSpec(spec)
         .withSortOrder(order)
         .withProperties(properties)
+        .withMetricsReporter(reporter)
         .create();
   }
 
@@ -287,7 +293,7 @@ public class HadoopTables implements Tables, Configurable {
   }
 
   public Catalog.TableBuilder buildTable(String location, Schema schema) {
-    return new HadoopTableBuilder(location, schema);
+    return new HadoopTableBuilder(location, schema).withMetricsReporter(reporter);
   }
 
   private class HadoopTableBuilder implements Catalog.TableBuilder {
@@ -296,6 +302,8 @@ public class HadoopTables implements Tables, Configurable {
     private final ImmutableMap.Builder<String, String> propertiesBuilder = ImmutableMap.builder();
     private PartitionSpec spec = PartitionSpec.unpartitioned();
     private SortOrder sortOrder = SortOrder.unsorted();
+
+    private MetricsReporter reporter;
 
     HadoopTableBuilder(String location, Schema schema) {
       this.location = location;
@@ -339,6 +347,12 @@ public class HadoopTables implements Tables, Configurable {
     }
 
     @Override
+    public Catalog.TableBuilder withMetricsReporter(MetricsReporter reporter) {
+      this.reporter = reporter;
+      return this;
+    }
+
+    @Override
     public Table create() {
       TableOperations ops = newTableOps(location);
       if (ops.current() != null) {
@@ -348,7 +362,7 @@ public class HadoopTables implements Tables, Configurable {
       Map<String, String> properties = propertiesBuilder.build();
       TableMetadata metadata = tableMetadata(schema, spec, sortOrder, properties, location);
       ops.commit(null, metadata);
-      return new BaseTable(ops, location);
+      return new BaseTable(ops, location, reporter);
     }
 
     @Override

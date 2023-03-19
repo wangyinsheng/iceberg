@@ -207,6 +207,11 @@ public class RESTSessionCatalog extends BaseSessionCatalog
     super.initialize(name, mergedProps);
   }
 
+  @Override
+  public MetricsReporter metricsReporter(){
+    return this.reporter;
+  }
+
   private AuthSession session(SessionContext context) {
     AuthSession session =
         sessions.get(
@@ -532,6 +537,8 @@ public class RESTSessionCatalog extends BaseSessionCatalog
     private SortOrder writeOrder = null;
     private String location = null;
 
+    private MetricsReporter reporter;
+
     private Builder(TableIdentifier ident, Schema schema, SessionContext context) {
       checkIdentifierIsValid(ident);
 
@@ -573,6 +580,12 @@ public class RESTSessionCatalog extends BaseSessionCatalog
     }
 
     @Override
+    public Builder withMetricsReporter(MetricsReporter reporter) {
+      this.reporter = reporter;
+      return this;
+    }
+
+    @Override
     public Table create() {
       CreateTableRequest request =
           CreateTableRequest.builder()
@@ -601,7 +614,7 @@ public class RESTSessionCatalog extends BaseSessionCatalog
               tableFileIO(context, response.config()),
               response.tableMetadata());
 
-      return new BaseTable(ops, fullTableName(ident));
+      return new BaseTable(ops, fullTableName(ident), reporter);
     }
 
     @Override

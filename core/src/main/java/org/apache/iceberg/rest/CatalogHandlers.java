@@ -211,6 +211,7 @@ public class CatalogHandlers {
             .withPartitionSpec(request.spec())
             .withSortOrder(request.writeOrder())
             .withProperties(request.properties())
+            .withMetricsReporter(catalog.metricsReporter())
             .create();
 
     if (table instanceof BaseTable) {

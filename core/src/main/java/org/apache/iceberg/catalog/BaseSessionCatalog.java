@@ -28,6 +28,7 @@ import java.util.function.Function;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
+import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 
@@ -158,6 +159,11 @@ public abstract class BaseSessionCatalog implements SessionCatalog {
     @Override
     public boolean namespaceExists(Namespace namespace) {
       return BaseSessionCatalog.this.namespaceExists(context, namespace);
+    }
+
+    @Override
+    public MetricsReporter metricsReporter() {
+      return BaseSessionCatalog.this.metricsReporter();
     }
   }
 }
