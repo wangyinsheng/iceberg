@@ -18,12 +18,12 @@
  */
 package org.apache.iceberg.metrics;
 
+import java.io.Serializable;
 import java.util.Map;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 /** This interface defines the basic API for reporting metrics for operations to a Table. */
 @FunctionalInterface
-public interface MetricsReporter {
+public interface MetricsReporter extends Serializable {
 
   /**
    * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
@@ -33,15 +33,6 @@ public interface MetricsReporter {
    * @param properties properties
    */
   default void initialize(Map<String, String> properties) {}
-
-  /**
-   * Return the properties for this metrics reporter
-   *
-   * @return the properties for this metrics reporter
-   */
-  default Map<String, String> properties() {
-    return ImmutableMap.of();
-  }
 
   /**
    * Indicates that an operation is done by reporting a {@link MetricsReport}. A {@link

@@ -21,6 +21,7 @@ package org.apache.iceberg;
 import static org.apache.iceberg.TestHelpers.roundTripSerialize;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import org.apache.iceberg.metrics.MetricsReport;
 import org.apache.iceberg.metrics.MetricsReporter;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.types.Types;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -67,30 +67,17 @@ public class TestSerializableTable {
     MetricsReporter reporter = CatalogUtil.loadMetricsReporter(properties);
     Table table = TestTables.create(temp, "tbl_A", SCHEMA, SPEC, SORT_ORDER, 2, reporter);
     Table serializableTable = roundTripSerialize(SerializableTable.copyOf(table));
-    assertSerializedMetricsReporter(reporter, serializableTable.metricsReporter());
+    assertThat(serializableTable.metricsReporter())
+        .isNotNull()
+        .isInstanceOf(TestMetricsReporter.class);
 
     serializableTable = TestHelpers.KryoHelpers.roundTripSerialize(SerializableTable.copyOf(table));
-    assertSerializedMetricsReporter(reporter, serializableTable.metricsReporter());
-  }
-
-  private void assertSerializedMetricsReporter(MetricsReporter expected, MetricsReporter actual) {
-    Assertions.assertThat(actual).isNotNull().isInstanceOf(TestMetricsReporter.class);
-    Assertions.assertThat(actual.properties()).isEqualTo(expected.properties());
-    Assertions.assertThat(actual.properties()).containsEntry("key1", "value1");
+    assertThat(serializableTable.metricsReporter())
+        .isNotNull()
+        .isInstanceOf(TestMetricsReporter.class);
   }
 
   public static class TestMetricsReporter implements MetricsReporter {
-    private Map<String, String> properties;
-
-    @Override
-    public void initialize(Map<String, String> props) {
-      this.properties = props;
-    }
-
-    @Override
-    public Map<String, String> properties() {
-      return properties;
-    }
 
     @Override
     public void report(MetricsReport report) {}

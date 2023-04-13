@@ -63,8 +63,7 @@ public class SerializableTable implements Table, Serializable {
   private final EncryptionManager encryption;
   private final LocationProvider locationProvider;
   private final Map<String, SnapshotRef> refs;
-
-  private final Map<String, String> metricsReporterProperties;
+  private final MetricsReporter metricsReporter;
 
   private transient volatile Table lazyTable = null;
   private transient volatile Schema lazySchema = null;
@@ -87,10 +86,7 @@ public class SerializableTable implements Table, Serializable {
     this.encryption = table.encryption();
     this.locationProvider = table.locationProvider();
     this.refs = SerializableMap.copyOf(table.refs());
-    this.metricsReporterProperties =
-        table instanceof BaseTable
-            ? SerializableMap.copyOf(table.metricsReporter().properties())
-            : null;
+    this.metricsReporter = table.metricsReporter();
   }
 
   /**
@@ -257,14 +253,7 @@ public class SerializableTable implements Table, Serializable {
 
   @Override
   public MetricsReporter metricsReporter() {
-    if (lazyMetricsReporter == null) {
-      synchronized (this) {
-        if (lazyMetricsReporter == null && metricsReporterProperties != null) {
-          lazyMetricsReporter = CatalogUtil.loadMetricsReporter(this.metricsReporterProperties);
-        }
-      }
-    }
-    return lazyMetricsReporter;
+    return metricsReporter;
   }
 
   @Override
